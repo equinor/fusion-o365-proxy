@@ -22,12 +22,12 @@ stages:
           inputs:
             azureSubscriptionEndpoint: $(subscriptionService)
             azureContainerRegistry: '$(acr)'
-            dockerFile: '$(blog.path)/build/hugodocs.dockerfile'
+            dockerFile: 'src/Fusion.O365Proxy/Dockerfile'
             imageName: '$(imageName)'
             includeSourceTags: true
             includeLatestTag: true
-            useDefaultContext: false
-            buildContext: $(blog.path)
+            useDefaultContext: true
+#            buildContext: src/Fusion.O365Proxy
 
         - task: Docker@1
           displayName: 'Push image'
