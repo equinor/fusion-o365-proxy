@@ -40,7 +40,7 @@ stages:
         - task: CopyFiles@2
           displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
           inputs:
-            SourceFolder: 'hugo-docs/build/k8s/'
+            SourceFolder: 'k8s/'
             Contents: |
               hugo-main.deployment.yml
             TargetFolder: '$(Build.ArtifactStagingDirectory)'
