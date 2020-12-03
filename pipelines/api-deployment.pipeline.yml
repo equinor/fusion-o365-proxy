@@ -11,7 +11,7 @@ variables:
   manifestFile: $(Pipeline.Workspace)/k8s-deployment/deployment.template.yml
   
 stages:
-  - stage: BuildDockerImage
+  - stage: Build
     displayName: 'Build proxy api container image'
     jobs:
     - job: DockerBuild
