@@ -94,7 +94,7 @@ spec:
     - o365-proxy.{{ENVNAME}}.fusion-dev.net
     secretName: {{ENVNAME}}-o365-proxy.fusion-dev.net-tls
   rules:
-    - host: resources-app.{{ENVNAME}}.fusion-dev.net
+    - host: o365-proxy.{{ENVNAME}}.fusion-dev.net
       http:
         paths:
         - path: /

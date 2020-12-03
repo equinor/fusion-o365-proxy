@@ -1,3 +1,7 @@
+##
+## Variables: graphClientSecret
+## Must be set in pipeline and kept secret.
+
 trigger: none
 pr: none
 
