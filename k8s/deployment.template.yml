@@ -42,7 +42,7 @@ spec:
         image: {{acr}}/{{imageName}}
         imagePullPolicy: Always
         ports:
-        - containerPort: 3000
+        - containerPort: 80
         volumeMounts:
         - name: env-config
           mountPath: "/app/static/config"
@@ -71,7 +71,7 @@ spec:
     app: fusion-o365-proxy
   ports:
   - port: 80
-    targetPort: 3000
+    targetPort: 80
 
 
 ---
