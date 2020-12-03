@@ -41,8 +41,7 @@ stages:
           displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
           inputs:
             SourceFolder: 'k8s/'
-            Contents: |
-              hugo-main.deployment.yml
+            Contents: '*'
             TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
         - publish: $(Build.ArtifactStagingDirectory)
