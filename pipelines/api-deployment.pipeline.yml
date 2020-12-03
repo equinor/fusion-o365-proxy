@@ -77,6 +77,14 @@ stages:
                   tokenPrefix: '{{'
                   tokenSuffix: '}}'
 
+              - task: Kubernetes@1
+                displayName: 'Set graph credentials'
+                inputs:
+                  secretType: 'generic'
+                  namespace: fusion-o365-proxy
+                  secretArguments: '--from-literal=clientSecret=$(graphClientSecret)'
+                  secretName: 'graph-credentials-secret'
+
               - task: KubernetesManifest@0
                 displayName: Deploy api container
                 inputs:
