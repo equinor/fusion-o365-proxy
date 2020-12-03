@@ -26,8 +26,8 @@ stages:
             imageName: '$(imageName)'
             includeSourceTags: true
             includeLatestTag: true
-            useDefaultContext: true
-#            buildContext: src/Fusion.O365Proxy
+            useDefaultContext: false
+            buildContext: src
 
         - task: Docker@1
           displayName: 'Push image'
