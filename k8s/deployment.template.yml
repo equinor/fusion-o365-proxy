@@ -1,0 +1,103 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-cfg
+data:
+  env.json: |
+    {
+      "AzureAd": {
+        "Authority": "https://login.microsoftonline.com/3aa4a235-b6e2-48d5-9195-7fcf05b459b0",
+        "TenantId": "3aa4a235-b6e2-48d5-9195-7fcf05b459b0",
+        "ClientId": "60bb6683-d737-40fc-8024-0ed77b8348cb"
+      }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fusion-o365-proxy
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 50%
+  selector:
+    matchLabels:
+      app: fusion-o365-proxy
+  template:
+    metadata:
+      labels:
+        app: fusion-o365-proxy
+    spec:
+      volumes:
+      - name: env-config
+        configMap:
+          name: env-cfg
+      containers:
+      - name: fusion-o365-proxy
+        image: {{fusionAcr}}/{{imageName}}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: env-config
+          mountPath: "/app/static/config"
+        env:
+        - name: BUILDNAME
+          value: "{{Build.BuildNumber}}"
+
+        - name: GraphCredentials__ClientSecret
+          valueFrom:
+            secretKeyRef:
+              name: graph-credentials-secret
+              key: clientSecret
+        resources:
+          limits:
+            memory: "500Mi"
+            cpu: "200m"
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fusion-o365-proxy
+spec:
+  selector:
+    app: fusion-o365-proxy
+  ports:
+  - port: 80
+    targetPort: 3000
+
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: fusion-o365-proxy-ingress
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: nginx
+    certmanager.k8s.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "32k"
+    nginx.org/client-max-body-size: "50m"
+    nginx.ingress.kubernetes.io/client-max-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  tls:
+  - hosts:
+    - o365-proxy.{{ENVNAME}}.fusion-dev.net
+    secretName: {{ENVNAME}}-o365-proxy.fusion-dev.net-tls
+  rules:
+    - host: resources-app.{{ENVNAME}}.fusion-dev.net
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: fusion-o365-proxy
+            servicePort: 80
