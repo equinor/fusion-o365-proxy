@@ -39,7 +39,7 @@ spec:
           name: env-cfg
       containers:
       - name: fusion-o365-proxy
-        image: {{fusionAcr}}/{{imageName}}
+        image: {{acr}}/{{imageName}}
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

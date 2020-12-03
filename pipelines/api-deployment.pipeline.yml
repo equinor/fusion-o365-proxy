@@ -15,6 +15,7 @@ stages:
     displayName: 'Build proxy api container image'
     jobs:
     - job: DockerBuild
+      pool: Private Docker
       displayName: 'Docker build'
       steps:
         - task: Docker@1
