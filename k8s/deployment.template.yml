@@ -50,12 +50,15 @@ spec:
         - name: BUILDNAME
           value: "{{Build.BuildNumber}}"
 
-        - name: GraphCredentials__ClientSecret
+        - name: AzureAd__ClientSecret
           valueFrom:
             secretKeyRef:
-              name: graph-credentials-secret
+              name: aad-client-secret
               key: clientSecret
         resources:
+          requests:
+            memory: "250Mi"
+            cpu: "50m"
           limits:
             memory: "500Mi"
             cpu: "200m"

@@ -22,7 +22,7 @@ jobs:
     displayName: 'Cleanup expired client secrets'
     steps:
     - task: AzurePowerShell@4
-      displayName: 'Ensure secret'
+      displayName: 'Remove expired secrets'
       inputs:
         azureSubscription: $(subscriptionService)
         ScriptType: 'InlineScript'

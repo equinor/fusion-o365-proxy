@@ -1,8 +1,17 @@
-##
-## Variables: graphClientSecret
-## Must be set in pipeline and kept secret.
 
-trigger: none
+
+##
+## The deployment manifest depends on a cluster secret named 'aad-client-secret' which is mounted in as an environment variable.
+## 
+
+trigger: 
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - src/Fusion.O365Proxy/*
+      
 pr: none
 
 pool:
@@ -63,7 +72,7 @@ stages:
       - deployment: DeployApp
         displayName: 'Deploy resources'
         pool: Private Docker
-        environment: fusion-ci.fusion-o365-proxy
+        environment: fusion-o365-proxy.fusion-o365-proxy-test
         variables:
           envName: 'test'
         
@@ -81,16 +90,44 @@ stages:
                   tokenPrefix: '{{'
                   tokenSuffix: '}}'
 
-              - task: Kubernetes@1
-                displayName: 'Set graph credentials'
-                inputs:
-                  secretType: 'generic'
-                  namespace: fusion-o365-proxy
-                  secretArguments: '--from-literal=clientSecret=$(graphClientSecret)'
-                  secretName: 'graph-credentials-secret'
-
               - task: KubernetesManifest@0
                 displayName: Deploy api container
                 inputs:
                   action: deploy
                   manifests: $(manifestFile)
+
+  # PROD DEPLOYMENT
+  ###################################################################################################################
+
+  - stage: PROD
+    displayName: Deploy API PROD
+    dependsOn: Build
+    condition: succeeded()
+    
+    jobs:
+      - deployment: DeployApp
+        displayName: 'Deploy resources'
+        pool: Private Docker
+        environment: fusion-o365-proxy.fusion-o365-proxy-prod
+        variables:
+          envName: 'prod'
+        
+        strategy:
+          runOnce:
+            deploy:
+              steps: 
+
+              - task: replacetokens@3
+                displayName: Replace tokens in k8s manifests
+                inputs:
+                  targetFiles: |
+                    $(manifestFile)
+                  keepToken: false
+                  tokenPrefix: '{{'
+                  tokenSuffix: '}}'
+
+              - task: KubernetesManifest@0
+                displayName: Deploy api container
+                inputs:
+                  action: deploy
+                  manifests: $(manifestFile)                  

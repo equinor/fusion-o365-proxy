@@ -39,6 +39,7 @@ namespace Fusion.O365Proxy
 
                     o.TokenValidationParameters.ValidAudiences = new[]
                     {
+                        "https://o365-proxy.prod.fusion-dev.net",
                         "https://o365-proxy.test.fusion-dev.net",
                         $"api://{Configuration["AzureAd:ClientId"]}",
                         Configuration["AzureAd:ClientId"]
