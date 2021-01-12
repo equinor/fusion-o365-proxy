@@ -50,6 +50,8 @@ namespace Fusion.O365Proxy
             services.AddSingleton<IApplicationMailboxResolver, ApplicationMailboxResolver>();
             services.AddSingleton<GraphCredentialsProvider>();
             services.AddMemoryCache();
+
+            services.AddHealthChecks();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -73,6 +75,7 @@ namespace Fusion.O365Proxy
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHealthChecks("/health");
                 endpoints.Map("/{version}/users/{mailbox}/{**catch-all}", async httpContext => await new Proxy.UserProxy(httpContext, httpClient).HandleAsync());
                 endpoints.Map("/{version}/subscriptions", async httpContext => await new Proxy.SubscriptionProxy(httpContext, httpClient).HandleAsync());
             });

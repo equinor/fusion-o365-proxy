@@ -21,6 +21,7 @@ jobs:
   - job: CleanupExpiredKeys
     displayName: 'Cleanup expired client secrets'
     steps:
+    - checkout: none
     - task: AzurePowerShell@4
       displayName: 'Remove expired secrets'
       inputs:
