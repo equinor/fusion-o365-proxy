@@ -4,6 +4,10 @@ pr: none
 
 schedules:
   - cron: 0 0 1 * *
+    always: true
+    branches:
+      include:
+        - master
 
 pool:
   vmImage: "ubuntu-latest"
