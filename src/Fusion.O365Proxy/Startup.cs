@@ -7,9 +7,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.ReverseProxy.Service.Proxy;
 
@@ -51,7 +53,9 @@ namespace Fusion.O365Proxy
             services.AddSingleton<GraphCredentialsProvider>();
             services.AddMemoryCache();
 
-            services.AddHealthChecks();
+            services.AddHealthChecks()
+                .AddCheck("liveness", () => HealthCheckResult.Healthy(), new string[0])
+                .AddCheck<Health.ConfigurationHealthCheck>("ready", failureStatus: HealthStatus.Unhealthy);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -75,7 +79,15 @@ namespace Fusion.O365Proxy
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHealthChecks("/health");
+                endpoints.MapHealthChecks("/health/liveness", new HealthCheckOptions()
+                {
+                    Predicate = test => test.Name == "liveness"
+                });
+                endpoints.MapHealthChecks("/health/ready", new HealthCheckOptions()
+                {
+                    Predicate = test => test.Name == "ready"
+                });
+
                 endpoints.Map("/{version}/users/{mailbox}/{**catch-all}", async httpContext => await new Proxy.UserProxy(httpContext, httpClient).HandleAsync());
                 endpoints.Map("/{version}/subscriptions", async httpContext => await new Proxy.SubscriptionProxy(httpContext, httpClient).HandleAsync());
             });
