@@ -1,0 +1,25 @@
+
+trigger: none
+pr: none
+
+pool:
+  vmImage: "ubuntu-latest"
+
+jobs:
+  - deployment: DeployApp
+    displayName: 'Add client secret'
+    #pool: Private Docker
+    environment: fusion-ci.fusion-o365-proxy
+    
+    strategy:
+      runOnce:
+        deploy:
+          steps: 
+
+          - task: Kubernetes@1
+            displayName: 'Login to cluster'
+            inputs:
+              command: 'login'            
+
+          - pwsh: |
+              kubectl get secrets
