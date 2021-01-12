@@ -24,7 +24,7 @@ jobs:
     - task: AzurePowerShell@4
       displayName: 'Ensure secret'
       inputs:
-        azureSubscription: ${{ parameters.subscriptionService }}
+        azureSubscription: $(subscriptionService)
         ScriptType: 'InlineScript'
         FailOnStandardError: true
         azurePowerShellVersion: 'LatestVersion'
