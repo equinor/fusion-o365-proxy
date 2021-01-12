@@ -89,3 +89,9 @@ When there are less than 35 days until the secret expires, a new secret is gener
 When the new key is created, the deployments in the namespace are restarted, which should ensure the new secret is loaded by the pods.
 
 The old keys are left until they expire. They will then be picked up by the cleanup job.
+
+## Health probes
+
+A liveness and ready probe has been defined. The ready probe will verify that the api can claim an access token against the graph api.
+
+> If the deployment fails, this might be due to invalid configuration. Verify client secret is valid for troubleshooting.
