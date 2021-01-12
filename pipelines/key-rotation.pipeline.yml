@@ -15,9 +15,32 @@ pool:
 variables:
   subscriptionService: 'PROJECT_PORTAL (63b791ae-b2bc-41a1-ac66-806c4e69bffe)'
   k8sSecretName: 'aad-client-secret'
-  aadApplicationName: 'Fusion O365 Proxy'
+  aadApplicationId: '60bb6683-d737-40fc-8024-0ed77b8348cb'
 
 jobs:
+  - job: CleanupExpiredKeys
+    displayName: 'Cleanup expired client secrets'
+    steps:
+    - task: AzurePowerShell@4
+      displayName: 'Ensure secret'
+      inputs:
+        azureSubscription: ${{ parameters.subscriptionService }}
+        ScriptType: 'InlineScript'
+        FailOnStandardError: true
+        azurePowerShellVersion: 'LatestVersion'
+        Inline: |
+          $adSecrets = Get-AzADAppCredential -ApplicationId "$(aadApplicationId)"
+          $expiredSecrets = $adSecrets | Where-Object { [DateTime]::Parse($_.EndDate) -lt (Get-Date) }
+          
+          ## Debug
+          Write-Host "Found $($expiredSecrets.Length) expired secrets."
+          $expiredSecrets 
+
+          $expiredSecrets | ForEach-Object { 
+            Write-Host "Deleting $($_.KeyId) [$($_.StartDate)] -> [$($_.EndDate)]"
+            Remove-AzADAppCredential -ApplicationId "$(aadApplicationId)" -KeyId $_.KeyId -Force 
+          }
+
   - deployment: RotateTest
     displayName: 'Rotate client secret in test'
     #pool: Private Docker
@@ -38,7 +61,7 @@ jobs:
           - template: templates/ensure-credentials-secret.template.yml
             parameters:
               subscriptionService: $(subscriptionService)
-              aadApplicationName: $(aadApplicationName)
+              aadApplicationId: $(aadApplicationId)
               k8sNamespace: $(k8sNamespace)
               k8sSecretName: $(k8sSecretName)
 
@@ -62,6 +85,6 @@ jobs:
           - template: templates/ensure-credentials-secret.template.yml
             parameters:
               subscriptionService: $(subscriptionService)
-              aadApplicationName: $(aadApplicationName)
+              aadApplicationId: $(aadApplicationId)
               k8sNamespace: $(k8sNamespace)
               k8sSecretName: $(k8sSecretName)              
