@@ -22,4 +22,4 @@ jobs:
               command: 'login'            
 
           - pwsh: |
-              kubectl get secrets
+              kubectl get secrets -n fusion-o365-proxy
