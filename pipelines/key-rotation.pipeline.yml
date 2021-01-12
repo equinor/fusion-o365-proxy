@@ -5,21 +5,62 @@ pr: none
 pool:
   vmImage: "ubuntu-latest"
 
+variables:
+  subscriptionService: 'PROJECT_PORTAL (63b791ae-b2bc-41a1-ac66-806c4e69bffe)'
+  k8sSecretName: 'aad-client-secret'
 jobs:
   - deployment: DeployApp
     displayName: 'Add client secret'
     #pool: Private Docker
     environment: fusion-ci.fusion-o365-proxy
+
+    variables:
+      k8sNamespace: fusion-o365-proxy
     
     strategy:
       runOnce:
         deploy:
           steps: 
-
           - task: Kubernetes@1
             displayName: 'Login to cluster'
             inputs:
               command: 'login'            
 
-          - pwsh: |
-              kubectl get secrets -n fusion-o365-proxy
+          - task: AzurePowerShell@4
+            displayName: 'Get secrets'
+            inputs:
+              azureSubscription: $(subscriptionService)
+              ScriptType: 'InlineScript'
+              FailOnStandardError: true
+              azurePowerShellVersion: 'LatestVersion'
+              Inline: |
+                  $k8sNamespace = "$(k8sNamespace)"
+                  $k8sSecretName = "$(k8sSecretName)"
+
+                  $adSecrets = Get-AzADAppCredential -DisplayName "Fusion O365 Proxy"
+
+                  $kSecret = kubectl -n $k8sNamespace get secret $k8sSecretName -o json | ConvertFrom-Json
+
+                  ## Key already exist
+                  if ($null -ne $kSecret) {
+                      $currentSecret = $adSecrets | where -Property KeyId -eq $kSecret.metadata.labels.keyId
+
+                      if ([DateTime]::Parse($currentSecret.EndDate) -gt (Get-Date).AddDays(30)) {
+                          Write-Host "Key still valid to $($currentSecret.EndDate) - skipping"
+                          return
+                      }
+                  }
+
+                  Write-Host "Creating new secret"
+
+                  $passwordString = [System.Web.Security.Membership]::GeneratePassword(64, $true)
+                  $password = ConvertTo-SecureString -String $passwordString -AsPlainText -Force
+                  $startDate = Get-Date
+                  $endDate = $startDate.AddMonths(3)
+                  $secret = New-AzADAppCredential -Password $password -DisplayName "Fusion O365 Proxy" -StartDate $startDate -EndDate $endDate
+
+
+                  kubectl -n $k8sNamespace create secret generic $k8sSecretName --from-literal=clientSecret=$passwordString
+                  kubectl -n $k8sNamespace label secret $k8sSecretName keyId="$($secret.KeyId)" --overwrite
+
+                  kubectl -n $k8sNamespace rollout restart deploy          
