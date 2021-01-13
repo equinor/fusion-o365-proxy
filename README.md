@@ -13,7 +13,7 @@ To get up and running:
 > To test endpoints access tokens with the correct roles must be used, or the authorization logic could be temporarily disabled or stepped over while debugging.
 
 ## Dispensation
-The app permissions has been discussed in the disp [#215098](https://disp.equinor.com/DispensationView/215098). This highlights the need for `Calendar.ReadWrite` and `Mail.Read`. These permissions are needed in order to create calendar events and the ability to read incoming reply mails.
+The app permissions has been discussed in the disp #215098. This highlights the need for `Calendar.ReadWrite` and `Mail.Read`. These permissions are needed in order to create calendar events and the ability to read incoming reply mails.
 
 ## Technical
 The api is a simple proxy api, replicating a selection of the graph api endpoints; `/{version}/users/{userUpn}/{*}` and `/{version}/subscriptions`. 
