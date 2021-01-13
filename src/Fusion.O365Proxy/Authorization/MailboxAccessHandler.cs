@@ -34,9 +34,8 @@ namespace Fusion.O365Proxy.Authorization
 
             if (ownedMailboxes.Any(m => string.Equals(resource.Mail, m, StringComparison.OrdinalIgnoreCase)))
                 context.Succeed(requirement);
-
-
-            logger.LogInformation($"The requested mailbox is not owned by the application '{appId}'");
+            else
+                logger.LogInformation($"The requested mailbox is not owned by the application '{appId}'");
         }
     }
 }
