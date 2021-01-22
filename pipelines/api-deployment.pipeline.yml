@@ -1,0 +1,133 @@
+
+
+##
+## The deployment manifest depends on a cluster secret named 'aad-client-secret' which is mounted in as an environment variable.
+## 
+
+trigger: 
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - src/Fusion.O365Proxy/*
+
+pr: none
+
+pool:
+  vmImage: "ubuntu-latest"
+    
+variables:
+  subscriptionService: 'PROJECT_PORTAL (63b791ae-b2bc-41a1-ac66-806c4e69bffe)'
+  acr: 'fusioncr.azurecr.io'
+  imageName: fusion/o365-proxy-api
+  manifestFile: $(Pipeline.Workspace)/k8s-deployment/deployment.template.yml
+  
+stages:
+  - stage: Build
+    displayName: 'Build proxy api container image'
+    jobs:
+    - job: DockerBuild
+      pool: Private Docker
+      displayName: 'Docker build'
+      steps:
+        - task: Docker@1
+          displayName: 'Build image'
+          inputs:
+            azureSubscriptionEndpoint: $(subscriptionService)
+            azureContainerRegistry: '$(acr)'
+            dockerFile: 'src/Fusion.O365Proxy/Dockerfile'
+            imageName: '$(imageName)'
+            includeSourceTags: true
+            includeLatestTag: true
+            useDefaultContext: false
+            buildContext: src
+
+        - task: Docker@1
+          displayName: 'Push image'
+          inputs:
+            azureSubscriptionEndpoint: $(subscriptionService)
+            azureContainerRegistry: '$(acr)'
+            command: 'Push an image'
+            imageName: '$(imageName):latest'
+
+        - task: CopyFiles@2
+          displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
+          inputs:
+            SourceFolder: 'k8s/'
+            Contents: '*'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+        - publish: $(Build.ArtifactStagingDirectory)
+          artifact: 'k8s-deployment'            
+
+  # CI DEPLOYMENT
+  ###################################################################################################################
+  - stage: CI
+    displayName: Deploy API CI
+    dependsOn: Build
+    condition: succeeded()
+    
+    jobs:
+      - deployment: DeployApp
+        displayName: 'Deploy resources'
+        pool: Private Docker
+        environment: fusion-o365-proxy.fusion-o365-proxy-test
+        variables:
+          envName: 'test'
+        
+        strategy:
+          runOnce:
+            deploy:
+              steps: 
+
+              - task: replacetokens@3
+                displayName: Replace tokens in k8s manifests
+                inputs:
+                  targetFiles: |
+                    $(manifestFile)
+                  keepToken: false
+                  tokenPrefix: '{{'
+                  tokenSuffix: '}}'
+
+              - task: KubernetesManifest@0
+                displayName: Deploy api container
+                inputs:
+                  action: deploy
+                  manifests: $(manifestFile)
+
+  # PROD DEPLOYMENT
+  ###################################################################################################################
+
+  - stage: PROD
+    displayName: Deploy API PROD
+    dependsOn: CI
+    condition: succeeded()
+    
+    jobs:
+      - deployment: DeployApp
+        displayName: 'Deploy resources'
+        pool: Private Docker
+        environment: fusion-o365-proxy.fusion-o365-proxy-prod
+        variables:
+          envName: 'prod'
+        
+        strategy:
+          runOnce:
+            deploy:
+              steps: 
+
+              - task: replacetokens@3
+                displayName: Replace tokens in k8s manifests
+                inputs:
+                  targetFiles: |
+                    $(manifestFile)
+                  keepToken: false
+                  tokenPrefix: '{{'
+                  tokenSuffix: '}}'
+
+              - task: KubernetesManifest@0
+                displayName: Deploy api container
+                inputs:
+                  action: deploy
+                  manifests: $(manifestFile)                  
