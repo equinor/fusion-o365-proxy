@@ -3,7 +3,7 @@ trigger: none
 pr: none
 
 schedules:
-- cron: 0 0 1 * *
+- cron: 0 0 1,15 * *
   displayName: Monthly key rotation
   branches:
     include:
